@@ -15,8 +15,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+# We can add a login view for use with the browsable API, 
+# by editing the URLconf in our project-level urls.py file.
+# Add the following import at the top of the file:
+from django.conf.urls import include
 
 urlpatterns = [
     path('', include('snippets.urls')),
     path('admin/', admin.site.urls),
+    
+]
+
+urlpatterns += [
+    path('api-auth/', include('rest_framework.urls')),
 ]

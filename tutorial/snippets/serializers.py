@@ -30,7 +30,23 @@
 # Now let's use ModelSerializer as it will lighten up the code
 from rest_framework import serializers
 from snippets.models import Snippet
+from django.contrib.auth.models import User
+
 class SnippetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Snippet
-        fields = ('id', 'title', 'code', 'linenos', 'language', 'style')
+        fields = ('id', 'owner', 'title', 'code', 'linenos', 'language', 'style')
+        # The source argument controls which attribute is used to populate a field, 
+        # and can point at any attribute on the serialized instance. 
+        # It can also take the dotted notation shown above, in which case 
+        # it will traverse the given attributes, in a similar way as it is used 
+        # with Django's template language.
+        owner = serializers.ReadOnlyField(source='owner.username')
+
+
+class UserSerializer(serializers.ModelSerializer):
+    snippets = serializers.PrimaryKeyRelatedField(many=True, queryset=Snippet.objects.all())
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'snippets')

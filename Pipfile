@@ -7,6 +7,9 @@ verify_ssl = true
 pylint = "*"
 
 [packages]
+django = "*"
+djangorestframework = "*"
+pygments = "*"
 
 [requires]
 python_version = "3.6"
