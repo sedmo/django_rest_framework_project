@@ -1,3 +1,25 @@
+from rest_framework import serializers
+from snippets.models import Snippet
+from django.contrib.auth.models import User
+
+# Hyperlinking our API
+class SnippetSerializer(serializers.HyperlinkedModelSerializer):
+    owner = serializers.ReadOnlyField(source='owner.username')
+    highlight = serializers.HyperlinkedIdentityField(view_name='snippet-highlight', format='html')
+
+    class Meta:
+        model = Snippet
+        fields = ('url', 'id', 'highlight', 'owner',
+                  'title', 'code', 'linenos', 'language', 'style')
+
+
+class UserSerializer(serializers.HyperlinkedModelSerializer):
+    snippets = serializers.HyperlinkedRelatedField(many=True, view_name='snippet-detail', read_only=True)
+
+    class Meta:
+        model = User
+        fields = ('url', 'id', 'username', 'snippets')
+
 #from rest_framework import serializers
 #from snippets.models import Snippet, LANGUAGE_CHOICES, STYLE_CHOICES
 #
@@ -28,25 +50,22 @@
 #        instance.save()
 #        return instance
 # Now let's use ModelSerializer as it will lighten up the code
-from rest_framework import serializers
-from snippets.models import Snippet
-from django.contrib.auth.models import User
-
-class SnippetSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Snippet
-        fields = ('id', 'owner', 'title', 'code', 'linenos', 'language', 'style')
-        # The source argument controls which attribute is used to populate a field, 
-        # and can point at any attribute on the serialized instance. 
-        # It can also take the dotted notation shown above, in which case 
-        # it will traverse the given attributes, in a similar way as it is used 
-        # with Django's template language.
-        owner = serializers.ReadOnlyField(source='owner.username')
+# class SnippetSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Snippet
+#         fields = ('id', 'owner', 'title', 'code', 'linenos', 'language', 'style')
+#         # The source argument controls which attribute is used to populate a field, 
+#         # and can point at any attribute on the serialized instance. 
+#         # It can also take the dotted notation shown above, in which case 
+#         # it will traverse the given attributes, in a similar way as it is used 
+#         # with Django's template language.
+#         owner = serializers.ReadOnlyField(source='owner.username')
 
 
-class UserSerializer(serializers.ModelSerializer):
-    snippets = serializers.PrimaryKeyRelatedField(many=True, queryset=Snippet.objects.all())
+# class UserSerializer(serializers.ModelSerializer):
+#     snippets = serializers.PrimaryKeyRelatedField(many=True, queryset=Snippet.objects.all())
 
-    class Meta:
-        model = User
-        fields = ('id', 'username', 'snippets')
+#     class Meta:
+#         model = User
+#         fields = ('id', 'username', 'snippets')
+

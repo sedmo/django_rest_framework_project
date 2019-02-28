@@ -3,37 +3,59 @@ from snippets.serializers import SnippetSerializer, UserSerializer
 from rest_framework import generics, permissions
 from django.contrib.auth.models import User
 from snippets.permissions import IsOwnerOrReadOnly
+from rest_framework.decorators import action, api_view
+from rest_framework.response import Response
+from rest_framework.reverse import reverse
+from rest_framework import renderers
 
-# Using read only views for user representation
-class UserList(generics.ListAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+# we're going to replace the SnippetList, SnippetDetail and SnippetHighlight
+#  view classes. We can remove the three views, and again replace them with 
+# a single class.
+class SnippetViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list`, `create`, `retrieve`,
+    `update` and `destroy` actions.
 
-
-class UserDetail(generics.RetrieveAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-# Using generic class-based views
-# Using the mixin classes we've rewritten the views to use slightly less code than before, 
-# but we can go one step further. REST framework provides a set of already mixed-in generic 
-# views that we can use to trim down our views.py module even more.
-class SnippetList(generics.ListCreateAPIView):
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    Additionally we also provide an extra `highlight` action.
+    """
     queryset = Snippet.objects.all()
     serializer_class = SnippetSerializer
-    # # Associating Snippets with Users
-    # .perform_create() allows us to modify how the instance save is managed, and handle 
-    # any information that is implicit in the incoming request or requested URL.
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+                          IsOwnerOrReadOnly,)
+
+    @action(detail=True, renderer_classes=[renderers.StaticHTMLRenderer])
+    def highlight(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        return Response(snippet.highlighted)
+
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
 
-class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,
-                      IsOwnerOrReadOnly,)
-    queryset = Snippet.objects.all()
-    serializer_class = SnippetSerializer
+
+# Creating an endpoint for the root of our API
+@api_view(['GET'])
+def api_root(request, format=None):
+    return Response({
+        'users': reverse('user-list', request=request, format=format),
+        'snippets': reverse('snippet-list', request=request, format=format)
+    })
+
+# Refactoring to use ViewSets
+#  let's refactor our UserList and UserDetail views into a single UserViewSet. 
+# We can remove the two views, and replace them with a single class:
+
+from rest_framework import viewsets
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    This viewset automatically provides `list` and `detail` actions.
+    """
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+
+
 # * Old way with just mixins and generic api view
 # from snippets.models import Snippet
 # from snippets.serializers import SnippetSerializer
@@ -187,3 +209,41 @@ class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
 # #     elif request.method == 'DELETE':
 # #         snippet.delete()
 # #         return Response(status=status.HTTP_204_NO_CONTENT)
+
+# # Using read only views for user representation
+# class UserList(generics.ListAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+
+
+# class UserDetail(generics.RetrieveAPIView):
+#     queryset = User.objects.all()
+#     serializer_class = UserSerializer
+# # Creating an endpoint for the highlighted snippets
+# class SnippetHighlight(generics.GenericAPIView):
+#     queryset = Snippet.objects.all()
+#     renderer_classes = (renderers.StaticHTMLRenderer,)
+
+#     def get(self, request, *args, **kwargs):
+#         snippet = self.get_object()
+#         return Response(snippet.highlighted)
+# Using generic class-based views
+# Using the mixin classes we've rewritten the views to use slightly less code than before, 
+# but we can go one step further. REST framework provides a set of already mixed-in generic 
+# views that we can use to trim down our views.py module even more.
+# class SnippetList(generics.ListCreateAPIView):
+#     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+#     queryset = Snippet.objects.all()
+#     serializer_class = SnippetSerializer
+#     # # Associating Snippets with Users
+#     # .perform_create() allows us to modify how the instance save is managed, and handle 
+#     # any information that is implicit in the incoming request or requested URL.
+#     def perform_create(self, serializer):
+#         serializer.save(owner=self.request.user)
+
+
+# class SnippetDetail(generics.RetrieveUpdateDestroyAPIView):
+#     permission_classes = (permissions.IsAuthenticatedOrReadOnly,
+#                       IsOwnerOrReadOnly,)
+# #     queryset = Snippet.objects.all()
+#     serializer_class = SnippetSerializer
