@@ -6,7 +6,7 @@ from snippets.permissions import IsOwnerOrReadOnly
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework import renderers
+from rest_framework import renderers, viewsets
 
 # we're going to replace the SnippetList, SnippetDetail and SnippetHighlight
 #  view classes. We can remove the three views, and again replace them with 
